@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Chat Room - Session: {{ session_key }}</h2>
+        <div id="chat-box"></div>
+        <input type="text" id="message-input" placeholder="Type your message...">
+        <button id="send-btn">Send</button>
+        <button id="leave-btn" class="leave-button">Leave Chat</button> <!-- Leave Chat Button -->
+    </div>
+
+    <script>
+        var socket = io();
+        var username = "{{ username }}";
+        var session_key = "{{ session_key }}";
+
+        // Join room
+        socket.emit('join', {username: username, session_key: session_key});
+
+        // Send message
+        document.getElementById('send-btn').onclick = function() {
+            var msg = document.getElementById('message-input').value;
+            socket.emit('message', {msg: msg, session_key: session_key});
+            document.getElementById('message-input').value = '';
+        };
+
+        // Receive message
+        socket.on('message', function(data) {
+            var chatBox = document.getElementById('chat-box');
+            var p = document.createElement('p');
+            p.innerHTML = data.msg;
+            chatBox.appendChild(p);
+        });
+
+        // Leave chat
+        document.getElementById('leave-btn').onclick = function() {
+            socket.emit('leave', {username: username, session_key: session_key});
+            window.location.href = '/';  // Redirect to login page
+        };
+    </script>
+</body>
+</html>

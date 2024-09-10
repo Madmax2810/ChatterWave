@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <form action="/chat" method="post">
+            <input type="text" name="username" placeholder="Enter Username" required>
+            <div class="session-container">
+                <input type="text" id="session_key" name="session_key" placeholder="Enter Session Key" required>
+                <button type="button" id="create-session-btn">Create Session</button>
+                <button type="button" id="copy-btn">Copy</button>
+            </div>
+            <button type="submit">Join Chat</button>
+        </form>
+    </div>
+
+    <script>
+        // Generate a 6-digit random session key
+        document.getElementById('create-session-btn').onclick = function() {
+            var sessionKey = Math.floor(100000 + Math.random() * 900000).toString(); // Generates a 6-digit number
+            document.getElementById('session_key').value = sessionKey;
+        };
+
+        // Copy session key to clipboard
+        document.getElementById('copy-btn').onclick = function() {
+            var sessionKeyInput = document.getElementById('session_key');
+            sessionKeyInput.select();
+            sessionKeyInput.setSelectionRange(0, 99999); // For mobile devices
+
+            document.execCommand('copy');
+            alert('Session Key Copied: ' + sessionKeyInput.value);
+        };
+    </script>
+</body>
+</html>
