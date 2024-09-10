@@ -13,13 +13,17 @@
         <div id="chat-box"></div>
         <input type="text" id="message-input" placeholder="Type your message...">
         <button id="send-btn">Send</button>
-        <button id="leave-btn" class="leave-button">Leave Chat</button> <!-- Leave Chat Button -->
+        <button id="record-btn">🎙️ Record</button>
+        <button id="leave-btn">Leave Chat</button>
     </div>
 
     <script>
         var socket = io();
         var username = "{{ username }}";
         var session_key = "{{ session_key }}";
+        var mediaRecorder;
+        var audioChunks = [];
+        var isRecording = false;
 
         // Join room
         socket.emit('join', {username: username, session_key: session_key});
@@ -27,8 +31,10 @@
         // Send message
         document.getElementById('send-btn').onclick = function() {
             var msg = document.getElementById('message-input').value;
-            socket.emit('message', {msg: msg, session_key: session_key});
-            document.getElementById('message-input').value = '';
+            if (msg.trim() !== "") {
+                socket.emit('message', {msg: msg, session_key: session_key});
+                document.getElementById('message-input').value = '';
+            }
         };
 
         // Receive message
@@ -39,10 +45,76 @@
             chatBox.appendChild(p);
         });
 
+        // Start/Stop recording audio
+        document.getElementById('record-btn').onclick = async function() {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        };
+
+        // Function to start recording audio
+        async function startRecording() {
+            isRecording = true;
+            document.getElementById('record-btn').innerText = '🛑 Stop';
+
+            // Access microphone
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            // Capture audio data
+            mediaRecorder.ondataavailable = function(event) {
+                audioChunks.push(event.data);
+            };
+
+            // Start recording
+            mediaRecorder.start();
+        }
+
+        // Function to stop recording and send audio to the server
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById('record-btn').innerText = '🎙️ Record';
+            
+            // Stop the recording
+            mediaRecorder.stop();
+
+            // When the recording stops, send the audio to the backend for transcription
+            mediaRecorder.onstop = function() {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'audio.wav');
+
+                // Send the audio to the backend
+                fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.transcription) {
+                        // Set the transcribed text in the message input
+                        document.getElementById('message-input').value = data.transcription;
+                    } else {
+                        console.error('Transcription failed:', data.error);
+                    }
+
+                    // Clear the audio chunks after sending
+                    audioChunks = [];
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            };
+        }
+
         // Leave chat
         document.getElementById('leave-btn').onclick = function() {
             socket.emit('leave', {username: username, session_key: session_key});
-            window.location.href = '/';  // Redirect to login page
+            fetch('/logout', { method: 'GET' }).then(() => {
+                window.location.href = '/';  // Redirect to login page
+            });
         };
     </script>
 </body>

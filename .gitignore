@@ -1,0 +1,32 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.pyd
+*.db
+*.sqlite3
+
+# Flask
+instance/
+*.env
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# System Files
+.DS_Store
+*.swp
+*.swo
+
+# Logs
+*.log
+*.pid
+*.seed
+
+# IDE and Editor Files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace

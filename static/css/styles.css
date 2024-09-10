@@ -87,3 +87,16 @@ button:hover {
     border: 1px solid #ccc;
 }
 
+#record-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#record-btn:hover {
+    background-color: #c82333;
+}
+
