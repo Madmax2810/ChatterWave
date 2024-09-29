@@ -1,3 +1,4 @@
+/* Existing styles */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -5,7 +6,7 @@ body {
     padding: 0;
 }
 
-.login-container, .chat-container {
+.chat-container {
     max-width: 600px;
     margin: 50px auto;
     padding: 20px;
@@ -60,43 +61,20 @@ button:hover {
     cursor: pointer;
 }
 
-/* Optional Styling */
-.session-container {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-button {
-    padding: 10px;
-    background-color: #28a745;
+#vtt-btn {
+    width: 100px;
+    background-color: blue;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
-button:hover {
-    background-color: #218838;
+#vtt-btn[disabled] {
+    background-color: grey;
 }
 
-#session_key {
-    width: 60%;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-}
-
-#record-btn {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-#record-btn:hover {
-    background-color: #c82333;
+#vtt-btn.stop-recording {
+    background-color: red;
 }
 

@@ -14,6 +14,7 @@ instance/
 venv/
 env/
 ENV/
+uploads/
 
 # System Files
 .DS_Store

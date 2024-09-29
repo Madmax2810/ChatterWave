@@ -14,13 +14,16 @@
         <input type="text" id="message-input" placeholder="Type your message...">
         <button id="send-btn">Send</button>
         <button id="leave-btn">Leave Chat</button>
+        <button id="vtt-btn" style="background-color: blue; color: white;">VTT</button>
     </div>
 
     <script>
         var socket = io();
         var username = "{{ username }}";
         var session_key = "{{ session_key }}";
-
+        var recording = false;
+        var mediaRecorder;
+        var audioChunks = [];
 
         // Join room
         socket.emit('join', {username: username, session_key: session_key});
@@ -42,13 +45,73 @@
             chatBox.appendChild(p);
         });
 
-       
         // Leave chat
         document.getElementById('leave-btn').onclick = function() {
             socket.emit('leave', {username: username, session_key: session_key});
             fetch('/logout', { method: 'GET' }).then(() => {
                 window.location.href = '/';  // Redirect to login page
             });
+        };
+
+        // Handle VTT (Voice-to-Text) button click
+        document.getElementById('vtt-btn').onclick = async function() {
+            var vttBtn = document.getElementById('vtt-btn');
+
+            if (!recording) {
+                vttBtn.innerHTML = 'Initializing...';
+                vttBtn.style.backgroundColor = 'orange';
+
+                // Initialize Vosk
+                const initResponse = await fetch('/initialize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (initResponse.ok) {
+                    vttBtn.innerHTML = 'Stop';
+                    vttBtn.style.backgroundColor = 'red';
+                    recording = true;
+
+                    // Start recording
+                    navigator.mediaDevices.getUserMedia({ audio: true })
+                        .then(stream => {
+                            mediaRecorder = new MediaRecorder(stream);
+                            mediaRecorder.start();
+
+                            mediaRecorder.ondataavailable = function(event) {
+                                audioChunks.push(event.data);
+                            };
+                        }).catch(err => {
+                            console.error('Error accessing the microphone: ', err);
+                        });
+                } else {
+                    console.log('Vosk initialization failed');
+                }
+            } else {
+                // Stop recording
+                mediaRecorder.stop();
+                mediaRecorder.onstop = function() {
+                    vttBtn.innerHTML = 'VTT';
+                    vttBtn.style.backgroundColor = 'blue';
+                    recording = false;
+
+                    // Create a Blob and send to backend
+                    var audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    var formData = new FormData();
+                    formData.append('file', audioBlob, 'audio.webm');
+
+                    // Upload audio for transcription
+                    fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('message-input').value = data.text;
+                    })
+                    .catch(err => console.error('Error uploading audio: ', err));
+                };
+            }
         };
     </script>
 </body>
