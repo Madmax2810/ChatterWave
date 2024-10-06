@@ -4,17 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Room</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/chat.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 </head>
 <body>
+    <nav>
+        <div class="navbar-container">
+            <h1 class="logo">ChatterWave</h1>
+            <ul>
+                <li><a href="/about">About Us</a></li>
+            </ul>
+        </div>
+    </nav>
+    
     <div class="chat-container">
-        <h2>Chat Room - Session: {{ session_key }}</h2>
+        <div class="chat-header">
+            <h2>Chat</h2>
+            <div class="session-info">
+                <span>Session ID: {{ session_key }}</span>
+                <button id="copy-session-btn" title="Copy Session ID">&#x1F0C5;</button> <!-- Copy symbol -->
+            </div>
+        </div>
         <div id="chat-box"></div>
-        <input type="text" id="message-input" placeholder="Type your message...">
-        <button id="send-btn">Send</button>
-        <button id="leave-btn">Leave Chat</button>
-        <button id="vtt-btn" style="background-color: blue; color: white;">VTT</button>
+        <input type="text" id="message-input" placeholder="Type a message...">
+        <button id="send-btn">&#10148;</button> <!-- Arrow symbol for send -->
+        <button id="leave-chat-btn">&#10060;</button> <!-- Cross symbol for leave -->
+        <button id="vtt-btn">&#127897;</button> <!-- Microphone symbol for VTT -->
     </div>
 
     <script>
@@ -24,6 +40,15 @@
         var recording = false;
         var mediaRecorder;
         var audioChunks = [];
+
+        // Copy Session ID to Clipboard
+        document.getElementById('copy-session-btn').onclick = function() {
+            navigator.clipboard.writeText(session_key).then(function() {
+                alert('Session ID Copied: ' + session_key);
+            }).catch(function(err) {
+                console.error('Error copying text: ', err);
+            });
+        };
 
         // Join room
         socket.emit('join', {username: username, session_key: session_key});
@@ -37,19 +62,27 @@
             }
         };
 
+        document.getElementById('message-input').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevents the default action, such as adding a new line
+                document.getElementById('send-btn').click(); // Triggers the click event on the send button
+            }
+        });
+
         // Receive message
         socket.on('message', function(data) {
             var chatBox = document.getElementById('chat-box');
             var p = document.createElement('p');
+            p.className = data.sender === username ? 'chat-message user' : 'chat-message other';
             p.innerHTML = data.msg;
             chatBox.appendChild(p);
         });
 
         // Leave chat
-        document.getElementById('leave-btn').onclick = function() {
+        document.getElementById('leave-chat-btn').onclick = function() {
             socket.emit('leave', {username: username, session_key: session_key});
             fetch('/logout', { method: 'GET' }).then(() => {
-                window.location.href = '/';  // Redirect to login page
+                window.location.href = '/';
             });
         };
 
@@ -58,9 +91,9 @@
             var vttBtn = document.getElementById('vtt-btn');
 
             if (!recording) {
-                vttBtn.innerHTML = 'Initializing...';
-                vttBtn.style.backgroundColor = 'orange';
-
+                // Show loading spinner
+                vttBtn.innerHTML = '<span id="loading-spinner"></span>';
+                
                 // Initialize Vosk
                 const initResponse = await fetch('/initialize', {
                     method: 'POST',
@@ -68,8 +101,9 @@
                 });
 
                 if (initResponse.ok) {
-                    vttBtn.innerHTML = 'Stop';
-                    vttBtn.style.backgroundColor = 'red';
+                    // Change button to Stop
+                    vttBtn.innerHTML = '&#127897;';
+                    vttBtn.classList.add('stop-recording');
                     recording = true;
 
                     // Start recording
@@ -91,8 +125,8 @@
                 // Stop recording
                 mediaRecorder.stop();
                 mediaRecorder.onstop = function() {
-                    vttBtn.innerHTML = 'VTT';
-                    vttBtn.style.backgroundColor = 'blue';
+                    vttBtn.innerHTML = '&#127897;'; // Reset to microphone symbol
+                    vttBtn.classList.remove('stop-recording');
                     recording = false;
 
                     // Create a Blob and send to backend

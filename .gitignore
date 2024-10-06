@@ -1,33 +1,62 @@
 # Python
-*.pyc
-*.pyo
 __pycache__/
+*.py[cod]
+*.pyo
 *.pyd
 *.db
 *.sqlite3
+*.egg-info/
+dist/
+build/
+.env
+*.log
 
 # Flask
 instance/
-*.env
-
-# Virtual Environment
+.venv/
 venv/
 env/
-ENV/
-uploads/
+*.egg
 
-# System Files
+# JavaScript/React
+node_modules/
+build/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# VS Code
+.vscode/
+.history/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# MacOS
 .DS_Store
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Other
 *.swp
 *.swo
-
-# Logs
-*.log
-*.pid
-*.seed
-
-# IDE and Editor Files
-.idea/
-.vscode/
-*.sublime-project
-*.sublime-workspace
+*.swn
