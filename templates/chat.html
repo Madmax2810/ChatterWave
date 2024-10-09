@@ -1,152 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chat Room</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/chat.css') }}">
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='css/chat.css') }}"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <nav>
-        <div class="navbar-container">
-            <h1 class="logo">ChatterWave</h1>
-            <ul>
-                <li><a href="/about">About Us</a></li>
-            </ul>
-        </div>
+      <div class="navbar-container">
+        <h1 class="logo">ChatterWave</h1>
+        <ul>
+          <li><a href="/about">About Us</a></li>
+        </ul>
+      </div>
     </nav>
-    
+
     <div class="chat-container">
-        <div class="chat-header">
-            <h2>Chat</h2>
-            <div class="session-info">
-                <span>Session ID: {{ session_key }}</span>
-                <button id="copy-session-btn" title="Copy Session ID">&#x1F0C5;</button> <!-- Copy symbol -->
-            </div>
+      <div class="chat-header">
+        <h2>Chat</h2>
+        <div class="session-info">
+          <span>Session ID: {{ session_key }}</span>
+          <button id="copy-session-btn" title="Copy Session ID">
+            &#x1F0C5;
+          </button>
         </div>
-        <div id="chat-box"></div>
-        <input type="text" id="message-input" placeholder="Type a message...">
-        <button id="send-btn">&#10148;</button> <!-- Arrow symbol for send -->
-        <button id="leave-chat-btn">&#10060;</button> <!-- Cross symbol for leave -->
-        <button id="vtt-btn">&#127897;</button> <!-- Microphone symbol for VTT -->
+      </div>
+      <div id="chat-box"></div>
+      <input type="text" id="message-input" placeholder="Type a message..." />
+      <button id="send-btn">&#10148;</button>
+      <button id="leave-chat-btn">&#10060;</button>
+      <button id="vtt-btn">&#127897;</button>
     </div>
 
     <script>
-        var socket = io();
-        var username = "{{ username }}";
-        var session_key = "{{ session_key }}";
-        var recording = false;
-        var mediaRecorder;
-        var audioChunks = [];
+      var socket = io();
+      var username = "{{ username }}";
+      var session_key = "{{ session_key }}";
+      var recording = false;
+      var mediaRecorder;
+      var audioChunks = [];
 
-        // Copy Session ID to Clipboard
-        document.getElementById('copy-session-btn').onclick = function() {
-            navigator.clipboard.writeText(session_key).then(function() {
-                alert('Session ID Copied: ' + session_key);
-            }).catch(function(err) {
-                console.error('Error copying text: ', err);
-            });
-        };
+      // Clear audioChunks before each new recording session
+      function clearAudioChunks() {
+        audioChunks = [];
+      }
 
-        // Join room
-        socket.emit('join', {username: username, session_key: session_key});
+      // Copy Session ID to Clipboard
+      document.getElementById("copy-session-btn").onclick = function () {
+        navigator.clipboard
+          .writeText(session_key)
+          .then(function () {
+            alert("Session ID Copied: " + session_key);
+          })
+          .catch(function (err) {
+            console.error("Error copying text: ", err);
+          });
+      };
 
-        // Send message
-        document.getElementById('send-btn').onclick = function() {
-            var msg = document.getElementById('message-input').value;
-            if (msg.trim() !== "") {
-                socket.emit('message', {msg: msg, session_key: session_key});
-                document.getElementById('message-input').value = '';
-            }
-        };
+      // Join room
+      socket.emit("join", { username: username, session_key: session_key });
 
-        document.getElementById('message-input').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Prevents the default action, such as adding a new line
-                document.getElementById('send-btn').click(); // Triggers the click event on the send button
-            }
+      // Send message
+      document.getElementById("send-btn").onclick = function () {
+        var msg = document.getElementById("message-input").value;
+        if (msg.trim() !== "") {
+          socket.emit("message", { msg: msg, session_key: session_key });
+          document.getElementById("message-input").value = "";
+        }
+      };
+
+      document
+        .getElementById("message-input")
+        .addEventListener("keydown", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            document.getElementById("send-btn").click();
+          }
         });
 
-        // Receive message
-        socket.on('message', function(data) {
-            var chatBox = document.getElementById('chat-box');
-            var p = document.createElement('p');
-            p.className = data.sender === username ? 'chat-message user' : 'chat-message other';
-            p.innerHTML = data.msg;
-            chatBox.appendChild(p);
+      // Receive message
+      socket.on("message", function (data) {
+        var chatBox = document.getElementById("chat-box");
+        var p = document.createElement("p");
+        p.className =
+          data.sender === username ? "chat-message user" : "chat-message other";
+        p.innerHTML = data.msg;
+        chatBox.appendChild(p);
+
+        // Auto-scroll to the bottom of the chat box
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+
+      // Leave chat
+      document.getElementById("leave-chat-btn").onclick = function () {
+        socket.emit("leave", { username: username, session_key: session_key });
+        fetch("/logout", { method: "GET" }).then(() => {
+          window.location.href = "/";
         });
+      };
 
-        // Leave chat
-        document.getElementById('leave-chat-btn').onclick = function() {
-            socket.emit('leave', {username: username, session_key: session_key});
-            fetch('/logout', { method: 'GET' }).then(() => {
-                window.location.href = '/';
-            });
-        };
+      // Handle VTT (Voice-to-Text) button click
+      document.getElementById("vtt-btn").onclick = async function () {
+        var vttBtn = document.getElementById("vtt-btn");
 
-        // Handle VTT (Voice-to-Text) button click
-        document.getElementById('vtt-btn').onclick = async function() {
-            var vttBtn = document.getElementById('vtt-btn');
+        if (!recording) {
+          // Show loading spinner
+          vttBtn.innerHTML = '<span id="loading-spinner"></span>';
+          clearAudioChunks(); // Clear any previous audio chunks
 
-            if (!recording) {
-                // Show loading spinner
-                vttBtn.innerHTML = '<span id="loading-spinner"></span>';
-                
-                // Initialize Vosk
-                const initResponse = await fetch('/initialize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+          // Initialize Vosk
+          const initResponse = await fetch("/initialize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
 
-                if (initResponse.ok) {
-                    // Change button to Stop
-                    vttBtn.innerHTML = '&#127897;';
-                    vttBtn.classList.add('stop-recording');
-                    recording = true;
+          if (initResponse.ok) {
+            vttBtn.innerHTML = "&#127897;";
+            vttBtn.classList.add("stop-recording");
+            recording = true;
 
-                    // Start recording
-                    navigator.mediaDevices.getUserMedia({ audio: true })
-                        .then(stream => {
-                            mediaRecorder = new MediaRecorder(stream);
-                            mediaRecorder.start();
+            // Start recording
+            navigator.mediaDevices
+              .getUserMedia({ audio: true })
+              .then((stream) => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
 
-                            mediaRecorder.ondataavailable = function(event) {
-                                audioChunks.push(event.data);
-                            };
-                        }).catch(err => {
-                            console.error('Error accessing the microphone: ', err);
-                        });
-                } else {
-                    console.log('Vosk initialization failed');
-                }
-            } else {
-                // Stop recording
-                mediaRecorder.stop();
-                mediaRecorder.onstop = function() {
-                    vttBtn.innerHTML = '&#127897;'; // Reset to microphone symbol
-                    vttBtn.classList.remove('stop-recording');
-                    recording = false;
-
-                    // Create a Blob and send to backend
-                    var audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    var formData = new FormData();
-                    formData.append('file', audioBlob, 'audio.webm');
-
-                    // Upload audio for transcription
-                    fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('message-input').value = data.text;
-                    })
-                    .catch(err => console.error('Error uploading audio: ', err));
+                mediaRecorder.ondataavailable = function (event) {
+                  audioChunks.push(event.data);
                 };
-            }
-        };
+              })
+              .catch((err) => {
+                console.error("Error accessing the microphone: ", err);
+              });
+          } else {
+            console.log("Vosk initialization failed");
+          }
+        } else {
+          // Stop recording
+          mediaRecorder.stop();
+          mediaRecorder.onstop = function () {
+            vttBtn.innerHTML = "&#127897;";
+            vttBtn.classList.remove("stop-recording");
+            recording = false;
+
+            // Create a Blob and send to backend
+            var audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+            var formData = new FormData();
+            formData.append("file", audioBlob, "audio.webm");
+
+            // Upload audio for transcription
+            fetch("/upload", {
+              method: "POST",
+              body: formData,
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                document.getElementById("message-input").value = data.text;
+              })
+              .catch((err) => console.error("Error uploading audio: ", err));
+          };
+        }
+      };
     </script>
-</body>
+  </body>
 </html>

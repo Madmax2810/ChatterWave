@@ -118,6 +118,7 @@ def upload():
             # Get the final transcription result
             final_result = rec.FinalResult()
             final_result_dict = json.loads(final_result)
+            print(final_result_dict)
             transcription_text = final_result_dict.get('text', '').strip()
             print(f"Final transcription: {transcription_text}")
 
