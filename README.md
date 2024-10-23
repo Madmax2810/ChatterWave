@@ -50,5 +50,8 @@ ChatterWave is a session-based web chat application that enables real-time commu
 4. **Run the Flask Server:**
   ```bash
   python app.py
-
+  ```
   
+## License
+
+This project is licensed under the [MIT License](LICENSE).
