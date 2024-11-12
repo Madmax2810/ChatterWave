@@ -64,7 +64,7 @@ def on_leave(data):
 def initialize():
     global model
     if model is None:
-        model = Model(r"D:\Codes\SEM5project-Learn\vosk-model-en-us-0.22")  # Your Vosk model path
+        model = Model(r"D:\Codes\SEM5project-Learn\eng-v8")  # Your Vosk model path
     return jsonify({'status': 'initialized'})
 
 @app.route('/upload', methods=['POST'])
